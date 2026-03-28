@@ -7,9 +7,12 @@ import { getCollector } from './collectors';
 
 /**
  * Directory where scan results are persisted as JSON files.
- * Created automatically on first scan if it doesn't exist.
+ *
+ * On Vercel (and other serverless platforms), process.cwd() is read-only.
+ * We use /tmp which is the only writable directory in serverless environments.
+ * On local dev, /tmp also works fine.
  */
-const SCANS_DIR = path.join(process.cwd(), 'data', 'scans');
+const SCANS_DIR = path.join('/tmp', 'health-scanner-scans');
 
 // ─── Threshold Configuration ────────────────────────────────────────────────
 // [warning, critical] for each category's primary % metric
@@ -81,7 +84,7 @@ function determineOverallStatus(metrics: MetricSnapshot[]): Status {
  * 3. Evaluate thresholds → assign status to each metric
  * 4. Generate human-readable health flags for issues
  * 5. Determine overall scan status (worst across all metrics)
- * 6. Persist the result as a JSON file in data/scans/
+ * 6. Persist the result as a JSON file in /tmp/health-scanner-scans/
  * 7. Return the complete ScanResult
  */
 export async function runScan(): Promise<ScanResult> {
