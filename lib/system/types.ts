@@ -7,7 +7,6 @@ export type Category = 'cpu' | 'memory' | 'disk';
 
 /**
  * A single metric reading from a system scan.
- * Represents one data point like "CPU Usage: 45%"
  */
 export interface MetricSnapshot {
   category: Category;
@@ -19,7 +18,6 @@ export interface MetricSnapshot {
 
 /**
  * A health flag raised during scan analysis.
- * Represents an issue or warning discovered during threshold evaluation.
  */
 export interface HealthFlag {
   category: Category;
@@ -28,11 +26,14 @@ export interface HealthFlag {
 }
 
 /**
- * Complete scan output — the full picture of a single health check.
- * Contains all metrics, flags, and metadata from one scan execution.
+ * Complete scan output — full picture of a single health check.
+ * machineId is a stable identifier for the machine that submitted the scan.
+ * For agent-pushed scans it is set by the agent; for server-run scans it
+ * defaults to the hostname.
  */
 export interface ScanResult {
   id: string;
+  machineId: string;
   timestamp: string;
   hostname: string;
   platform: string;
@@ -43,11 +44,21 @@ export interface ScanResult {
 
 /**
  * Lightweight scan summary for history lists.
- * Used in the dashboard sidebar and scan history to avoid loading full results.
  */
 export interface ScanSummary {
   id: string;
+  machineId: string;
   timestamp: string;
   overallStatus: Status;
   hostname: string;
+}
+
+/**
+ * Registered machine info — stored so the dashboard can list all known machines.
+ */
+export interface MachineInfo {
+  machineId: string;
+  hostname: string;
+  platform: string;
+  lastSeen: string;
 }
