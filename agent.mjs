@@ -89,17 +89,18 @@ async function collectMacOS() {
     metrics.push({ category: 'memory', label: 'Total Memory', value: 0, unit: 'GB', status: 'normal' });
   }
 
-  // Disk
+  // Disk — use df -k (kilobytes) to avoid unit-parsing bugs with large disks
   try {
-    const { stdout } = await execAsync('df -H /');
-    const parts = stdout.trim().split('\n')[1].split(/\s+/);
-    const capStr = parts.find(p => p.includes('%')) || '0%';
-    const cap    = parseFloat(capStr.replace('%', ''));
-    const sizeStr = parts[1] || '0G';
-    const usedStr = parts[2] || '0G';
-    metrics.push({ category: 'disk', label: 'Disk Usage', value: cap,                         unit: '%',                         status: 'normal' });
-    metrics.push({ category: 'disk', label: 'Disk Used',  value: parseFloat(usedStr) || 0,    unit: usedStr.replace(/[\d.]/g,'') || 'GB', status: 'normal' });
-    metrics.push({ category: 'disk', label: 'Disk Total', value: parseFloat(sizeStr) || 0,    unit: sizeStr.replace(/[\d.]/g,'') || 'GB', status: 'normal' });
+    const { stdout } = await execAsync('df -k /');
+    const parts   = stdout.trim().split('\n')[1].split(/\s+/);
+    const totalKB = parseInt(parts[1] || '0', 10);
+    const usedKB  = parseInt(parts[2] || '0', 10);
+    const usedGB      = Math.round((usedKB  / 1048576) * 100) / 100;
+    const totalGB     = Math.round((totalKB / 1048576) * 100) / 100;
+    const usedPercent = totalKB > 0 ? Math.round((usedKB / totalKB) * 10000) / 100 : 0;
+    metrics.push({ category: 'disk', label: 'Disk Usage', value: usedPercent, unit: '%',  status: 'normal' });
+    metrics.push({ category: 'disk', label: 'Disk Used',  value: usedGB,      unit: 'GB', status: 'normal' });
+    metrics.push({ category: 'disk', label: 'Disk Total', value: totalGB,     unit: 'GB', status: 'normal' });
   } catch (_e) {
     metrics.push({ category: 'disk', label: 'Disk Usage', value: 0, unit: '%',  status: 'normal' });
     metrics.push({ category: 'disk', label: 'Disk Used',  value: 0, unit: 'GB', status: 'normal' });
@@ -148,17 +149,18 @@ async function collectLinux() {
     metrics.push({ category: 'memory', label: 'Total Memory', value: 0, unit: 'GB', status: 'normal' });
   }
 
-  // Disk
+  // Disk — use df -k (kilobytes) to avoid unit-parsing bugs with large disks
   try {
-    const { stdout } = await execAsync('df -H /');
+    const { stdout } = await execAsync('df -k /');
     const parts   = stdout.trim().split('\n')[1].split(/\s+/);
-    const capStr  = parts.find(p => p.includes('%')) || '0%';
-    const cap     = parseFloat(capStr.replace('%',''));
-    const sizeStr = parts[1] || '0G';
-    const usedStr = parts[2] || '0G';
-    metrics.push({ category: 'disk', label: 'Disk Usage', value: cap,                      unit: '%',                          status: 'normal' });
-    metrics.push({ category: 'disk', label: 'Disk Used',  value: parseFloat(usedStr) || 0, unit: usedStr.replace(/[\d.]/g,'') || 'GB', status: 'normal' });
-    metrics.push({ category: 'disk', label: 'Disk Total', value: parseFloat(sizeStr) || 0, unit: sizeStr.replace(/[\d.]/g,'') || 'GB', status: 'normal' });
+    const totalKB = parseInt(parts[1] || '0', 10);
+    const usedKB  = parseInt(parts[2] || '0', 10);
+    const usedGB      = Math.round((usedKB  / 1048576) * 100) / 100;
+    const totalGB     = Math.round((totalKB / 1048576) * 100) / 100;
+    const usedPercent = totalKB > 0 ? Math.round((usedKB / totalKB) * 10000) / 100 : 0;
+    metrics.push({ category: 'disk', label: 'Disk Usage', value: usedPercent, unit: '%',  status: 'normal' });
+    metrics.push({ category: 'disk', label: 'Disk Used',  value: usedGB,      unit: 'GB', status: 'normal' });
+    metrics.push({ category: 'disk', label: 'Disk Total', value: totalGB,     unit: 'GB', status: 'normal' });
   } catch (_e) {
     metrics.push({ category: 'disk', label: 'Disk Usage', value: 0, unit: '%',  status: 'normal' });
     metrics.push({ category: 'disk', label: 'Disk Used',  value: 0, unit: 'GB', status: 'normal' });
