@@ -68,10 +68,13 @@ export default function DashboardClient() {
       if (res.ok) {
         const scan: ScanResult = await res.json();
         setCurrentScan(scan);
-        // Refresh machines + history
+        // Switch selection to whichever machine just ran the scan,
+        // then refresh machines + history scoped to that machine
+        const scannedMachineId = scan.machineId;
+        setSelectedMachineId(scannedMachineId);
         const [machinesRes, histRes] = await Promise.all([
           fetch('/api/machines'),
-          fetch(selectedMachineId ? `/api/scans?machineId=${encodeURIComponent(selectedMachineId)}` : '/api/scans'),
+          fetch(`/api/scans?machineId=${encodeURIComponent(scannedMachineId)}`),
         ]);
         if (machinesRes.ok) setMachines(await machinesRes.json());
         if (histRes.ok) setHistory(await histRes.json());
@@ -81,7 +84,7 @@ export default function DashboardClient() {
     } finally {
       setScanning(false);
     }
-  }, [selectedMachineId]);
+  }, []);
 
   const getMetric = (category: Category) => {
     if (!currentScan) return null;
@@ -97,6 +100,13 @@ export default function DashboardClient() {
     if (platform === 'darwin') return '🍎';
     if (platform === 'win32') return '🪟';
     return '🐧';
+  };
+
+  const platformLabel = (platform: string) => {
+    if (platform === 'darwin') return 'macOS';
+    if (platform === 'win32') return 'Windows';
+    if (platform === 'linux') return 'Linux';
+    return platform;
   };
 
   return (
@@ -145,7 +155,7 @@ export default function DashboardClient() {
             <h1 className="page-title">Dashboard</h1>
             {currentScan && (
               <div style={{ fontSize: 12, opacity: 0.5, marginTop: 2 }}>
-                {currentScan.hostname} · {currentScan.platform}
+                {currentScan.hostname} · {platformLabel(currentScan.platform)}
               </div>
             )}
           </div>
@@ -314,3 +324,4 @@ function MetricCard({ title, value, status, details }: MetricCardProps) {
     </div>
   );
 }
+
