@@ -5,18 +5,16 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/scans
- * Returns ScanSummary[] — all past scans, sorted newest-first.
- * Used by the dashboard to populate the scan history list.
+ * Optional query param: ?machineId=<id> to filter by machine.
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const scans = await getScans();
+    const { searchParams } = new URL(request.url);
+    const machineId = searchParams.get('machineId') || undefined;
+    const scans = await getScans(machineId);
     return NextResponse.json(scans);
   } catch (error) {
     console.error('Failed to fetch scans:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch scans' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch scans' }, { status: 500 });
   }
 }
