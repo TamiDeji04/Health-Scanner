@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import type { ScanResult, ScanSummary, Category, MachineInfo } from '@/lib/system/types';
 import LocalDateTime from './local-date-time';
@@ -13,6 +13,8 @@ export default function DashboardClient() {
   const [history, setHistory] = useState<ScanSummary[]>([]);
   const [scanning, setScanning] = useState(false);
   const [loading, setLoading] = useState(true);
+  // When runScan already has the full scan, skip re-fetching the detail
+  const skipNextDetailFetch = useRef(false);
 
   // Load machines on mount
   useEffect(() => {
@@ -37,6 +39,12 @@ export default function DashboardClient() {
   useEffect(() => {
     async function loadScans() {
       setLoading(true);
+      // If runScan just fired and gave us the scan directly, don't clobber it
+      if (skipNextDetailFetch.current) {
+        skipNextDetailFetch.current = false;
+        setLoading(false);
+        return;
+      }
       setCurrentScan(null);
       setHistory([]);
       try {
@@ -44,13 +52,16 @@ export default function DashboardClient() {
           ? `/api/scans?machineId=${encodeURIComponent(selectedMachineId)}`
           : '/api/scans';
         const res = await fetch(url);
+        if (!res.ok) { setLoading(false); return; }
         const scans: ScanSummary[] = await res.json();
         setHistory(scans);
         if (scans.length > 0) {
+          // Fetch the most recent scan detail — may 404 on cold containers
           const detailRes = await fetch(`/api/scans/${scans[0].id}`);
           if (detailRes.ok) {
             setCurrentScan(await detailRes.json());
           }
+          // If 404, currentScan stays null — UI shows "No scans yet" gracefully
         }
       } catch (e) {
         console.error('Failed to load scans:', e);
@@ -67,11 +78,13 @@ export default function DashboardClient() {
       const res = await fetch('/api/scan', { method: 'POST' });
       if (res.ok) {
         const scan: ScanResult = await res.json();
+        // We already have the full scan — tell loadScans not to re-fetch detail
+        skipNextDetailFetch.current = true;
         setCurrentScan(scan);
-        // Switch selection to whichever machine just ran the scan,
-        // then refresh machines + history scoped to that machine
         const scannedMachineId = scan.machineId;
+        // Changing selectedMachineId triggers loadScans, but the flag skips detail fetch
         setSelectedMachineId(scannedMachineId);
+        // Refresh machines list and history in parallel
         const [machinesRes, histRes] = await Promise.all([
           fetch('/api/machines'),
           fetch(`/api/scans?machineId=${encodeURIComponent(scannedMachineId)}`),
