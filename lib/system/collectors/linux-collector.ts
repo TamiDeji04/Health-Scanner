@@ -104,25 +104,30 @@ export class LinuxCollector implements SystemCollector {
   }
 
   /**
-   * Parse disk usage from `df -H /`.
+   * Parse disk usage from `df -k /` (kilobytes — no unit ambiguity).
+   * Converts KB → GB for display.
    */
   private async collectDisk(): Promise<MetricSnapshot[]> {
     try {
-      const { stdout } = await execAsync('df -H /');
+      const { stdout } = await execAsync('df -k /');
       const lines = stdout.trim().split('\n');
       if (lines.length < 2) return this.zeroDisk();
 
+      // df -k output: Filesystem 1K-blocks Used Available Use% Mounted
       const parts = lines[1].split(/\s+/);
-      const capacityStr = parts.find((p) => p.includes('%'));
-      const capacity = capacityStr ? parseFloat(capacityStr.replace('%', '')) : 0;
+      const totalKB = parseInt(parts[1] || '0', 10);
+      const usedKB  = parseInt(parts[2] || '0', 10);
 
-      const sizeStr = parts[1] || '0G';
-      const usedStr = parts[2] || '0G';
+      if (totalKB === 0) return this.zeroDisk();
+
+      const usedGB      = Math.round((usedKB  / 1048576) * 100) / 100;
+      const totalGB     = Math.round((totalKB / 1048576) * 100) / 100;
+      const usedPercent = Math.round((usedKB  / totalKB) * 10000) / 100;
 
       return [
-        { category: 'disk', label: 'Disk Usage', value: capacity, unit: '%', status: 'normal' },
-        { category: 'disk', label: 'Disk Used', value: parseFloat(usedStr) || 0, unit: usedStr.replace(/[\d.]/g, '') || 'GB', status: 'normal' },
-        { category: 'disk', label: 'Disk Total', value: parseFloat(sizeStr) || 0, unit: sizeStr.replace(/[\d.]/g, '') || 'GB', status: 'normal' },
+        { category: 'disk', label: 'Disk Usage', value: usedPercent, unit: '%',  status: 'normal' },
+        { category: 'disk', label: 'Disk Used',  value: usedGB,      unit: 'GB', status: 'normal' },
+        { category: 'disk', label: 'Disk Total', value: totalGB,     unit: 'GB', status: 'normal' },
       ];
     } catch (_e) {
       return this.zeroDisk();
