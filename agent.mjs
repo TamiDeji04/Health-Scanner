@@ -92,7 +92,9 @@ async function collectMacOS() {
   // Disk — use df -k (kilobytes) to avoid unit-parsing bugs with large disks
   try {
     const { stdout } = await execAsync('df -k /');
-    const parts   = stdout.trim().split('\n')[1].split(/\s+/);
+    const lines = stdout.trim().split('\n');
+    if (lines.length < 2) throw new Error('Unexpected df output: missing data row');
+    const parts   = lines[1].split(/\s+/);
     const totalKB = parseInt(parts[1] || '0', 10);
     const usedKB  = parseInt(parts[2] || '0', 10);
     const usedGB      = Math.round((usedKB  / 1048576) * 100) / 100;
@@ -152,7 +154,9 @@ async function collectLinux() {
   // Disk — use df -k (kilobytes) to avoid unit-parsing bugs with large disks
   try {
     const { stdout } = await execAsync('df -k /');
-    const parts   = stdout.trim().split('\n')[1].split(/\s+/);
+    const lines = stdout.trim().split('\n');
+    if (lines.length < 2) throw new Error('Unexpected df output: missing data row');
+    const parts   = lines[1].split(/\s+/);
     const totalKB = parseInt(parts[1] || '0', 10);
     const usedKB  = parseInt(parts[2] || '0', 10);
     const usedGB      = Math.round((usedKB  / 1048576) * 100) / 100;
