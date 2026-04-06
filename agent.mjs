@@ -254,6 +254,9 @@ function postJSON(url, body) {
       res.on('data', chunk => body += chunk);
       res.on('end', () => resolve({ status: res.statusCode, body }));
     });
+    req.setTimeout(30000, () => {
+      req.destroy(new Error('Request timeout after 30s'));
+    });
     req.on('error', reject);
     req.write(data);
     req.end();
