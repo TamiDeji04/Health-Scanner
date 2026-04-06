@@ -69,12 +69,12 @@ export class WindowsCollector implements SystemCollector {
       const data = JSON.parse(stdout.trim());
       const totalKB = parseInt(data.TotalVisibleMemorySize, 10) || 1;
       const freeKB = parseInt(data.FreePhysicalMemory, 10) || 0;
-      const usedKB = totalKB - freeKB;
+      const usedKB = Math.max(0, totalKB - freeKB);
 
       const usedGB = Math.round((usedKB / 1048576) * 100) / 100;
       const totalGB = Math.round((totalKB / 1048576) * 100) / 100;
       const usedPercent = totalKB > 0
-        ? Math.round((usedKB / totalKB) * 10000) / 100
+        ? Math.min(100, Math.round((usedKB / totalKB) * 10000) / 100)
         : 0;
 
       return [
