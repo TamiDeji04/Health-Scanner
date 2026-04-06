@@ -291,7 +291,9 @@ console.log(`  Dashboard  : ${DASHBOARD_URL}`);
 console.log(`  Interval   : ${RUN_ONCE ? 'once' : `${INTERVAL_SECS}s`}`);
 console.log('');
 
-tick();
-if (!RUN_ONCE) {
-  setInterval(tick, INTERVAL_SECS * 1000);
-}
+(async () => {
+  await tick();
+  if (!RUN_ONCE) {
+    setInterval(tick, INTERVAL_SECS * 1000);
+  }
+})();
