@@ -89,11 +89,11 @@ export class MacOSCollector implements SystemCollector {
       const wiredPages = wiredMatch ? parseInt(wiredMatch[1], 10) : 0;
       const totalBytes = totalMatch ? parseInt(totalMatch[1], 10) : 1;
 
-      const usedBytes = (activePages + wiredPages) * pageSize;
+      const usedBytes = Math.max(0, (activePages + wiredPages) * pageSize);
       const usedGB = Math.round((usedBytes / 1073741824) * 100) / 100;
       const totalGB = Math.round((totalBytes / 1073741824) * 100) / 100;
       const usedPercent = totalBytes > 0
-        ? Math.round((usedBytes / totalBytes) * 10000) / 100
+        ? Math.min(100, Math.round((usedBytes / totalBytes) * 10000) / 100)
         : 0;
 
       return [

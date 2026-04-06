@@ -92,7 +92,9 @@ async function collectMacOS() {
   // Disk — use df -k (kilobytes) to avoid unit-parsing bugs with large disks
   try {
     const { stdout } = await execAsync('df -k /');
-    const parts   = stdout.trim().split('\n')[1].split(/\s+/);
+    const lines = stdout.trim().split('\n');
+    if (lines.length < 2) throw new Error('Unexpected df output: missing data row');
+    const parts   = lines[1].split(/\s+/);
     const totalKB = parseInt(parts[1] || '0', 10);
     const usedKB  = parseInt(parts[2] || '0', 10);
     const usedGB      = Math.round((usedKB  / 1048576) * 100) / 100;
@@ -152,7 +154,9 @@ async function collectLinux() {
   // Disk — use df -k (kilobytes) to avoid unit-parsing bugs with large disks
   try {
     const { stdout } = await execAsync('df -k /');
-    const parts   = stdout.trim().split('\n')[1].split(/\s+/);
+    const lines = stdout.trim().split('\n');
+    if (lines.length < 2) throw new Error('Unexpected df output: missing data row');
+    const parts   = lines[1].split(/\s+/);
     const totalKB = parseInt(parts[1] || '0', 10);
     const usedKB  = parseInt(parts[2] || '0', 10);
     const usedGB      = Math.round((usedKB  / 1048576) * 100) / 100;
@@ -250,6 +254,9 @@ function postJSON(url, body) {
       res.on('data', chunk => body += chunk);
       res.on('end', () => resolve({ status: res.statusCode, body }));
     });
+    req.setTimeout(30000, () => {
+      req.destroy(new Error('Request timeout after 30s'));
+    });
     req.on('error', reject);
     req.write(data);
     req.end();
@@ -258,7 +265,14 @@ function postJSON(url, body) {
 
 // ─── Main Loop ───────────────────────────────────────────────────────────────
 
+let isRunning = false;
+
 async function tick() {
+  if (isRunning) {
+    console.warn(`[${new Date().toISOString()}] Previous scan still running — skipping this interval`);
+    return;
+  }
+  isRunning = true;
   const ts = new Date().toISOString();
   try {
     console.log(`[${ts}] Collecting metrics from ${os.hostname()} (${PLATFORM})...`);
@@ -278,6 +292,8 @@ async function tick() {
     }
   } catch (err) {
     console.error(`[${ts}] ✗ Failed to push scan:`, err.message);
+  } finally {
+    isRunning = false;
   }
 }
 
@@ -287,7 +303,9 @@ console.log(`  Dashboard  : ${DASHBOARD_URL}`);
 console.log(`  Interval   : ${RUN_ONCE ? 'once' : `${INTERVAL_SECS}s`}`);
 console.log('');
 
-tick();
-if (!RUN_ONCE) {
-  setInterval(tick, INTERVAL_SECS * 1000);
-}
+(async () => {
+  await tick();
+  if (!RUN_ONCE) {
+    setInterval(tick, INTERVAL_SECS * 1000);
+  }
+})();

@@ -82,12 +82,12 @@ export class LinuxCollector implements SystemCollector {
 
       const totalKB = totalMatch ? parseInt(totalMatch[1], 10) : 1;
       const availKB = availMatch ? parseInt(availMatch[1], 10) : 0;
-      const usedKB = totalKB - availKB;
+      const usedKB = Math.max(0, totalKB - availKB);
 
       const usedGB = Math.round((usedKB / 1048576) * 100) / 100;
       const totalGB = Math.round((totalKB / 1048576) * 100) / 100;
       const usedPercent = totalKB > 0
-        ? Math.round((usedKB / totalKB) * 10000) / 100
+        ? Math.min(100, Math.round((usedKB / totalKB) * 10000) / 100)
         : 0;
 
       return [
