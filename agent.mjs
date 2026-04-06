@@ -265,7 +265,14 @@ function postJSON(url, body) {
 
 // ─── Main Loop ───────────────────────────────────────────────────────────────
 
+let isRunning = false;
+
 async function tick() {
+  if (isRunning) {
+    console.warn(`[${new Date().toISOString()}] Previous scan still running — skipping this interval`);
+    return;
+  }
+  isRunning = true;
   const ts = new Date().toISOString();
   try {
     console.log(`[${ts}] Collecting metrics from ${os.hostname()} (${PLATFORM})...`);
@@ -285,6 +292,8 @@ async function tick() {
     }
   } catch (err) {
     console.error(`[${ts}] ✗ Failed to push scan:`, err.message);
+  } finally {
+    isRunning = false;
   }
 }
 
