@@ -189,8 +189,9 @@ export async function getScans(machineId?: string): Promise<ScanSummary[]> {
 }
 
 export async function getScanById(id: string): Promise<ScanResult | null> {
-  const sanitized = id.replace(/[^a-f0-9-]/gi, '');
-  if (sanitized !== id) return null;
+  const lower = id.toLowerCase();
+  const sanitized = lower.replace(/[^a-f0-9-]/g, '');
+  if (sanitized !== lower) return null;
   try {
     const content = await fs.readFile(path.join(SCANS_DIR, `${sanitized}.json`), 'utf-8');
     return JSON.parse(content) as ScanResult;
