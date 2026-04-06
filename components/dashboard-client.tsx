@@ -13,6 +13,7 @@ export default function DashboardClient() {
   const [history, setHistory] = useState<ScanSummary[]>([]);
   const [scanning, setScanning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [machineLoadError, setMachineLoadError] = useState<string | null>(null);
   // When runScan already has the full scan, skip re-fetching the detail
   const skipNextDetailFetch = useRef(false);
 
@@ -27,9 +28,12 @@ export default function DashboardClient() {
           if (data.length > 0 && !selectedMachineId) {
             setSelectedMachineId(data[0].machineId);
           }
+        } else {
+          setMachineLoadError('Failed to load machines');
         }
       } catch (e) {
         console.error('Failed to load machines:', e);
+        setMachineLoadError('Failed to load machines');
       }
     }
     loadMachines();
@@ -187,8 +191,20 @@ export default function DashboardClient() {
           </button>
         </div>
 
+        {/* Machine load error — shown when /api/machines returns non-ok */}
+        {machineLoadError && (
+          <div className="agent-banner" style={{ borderColor: 'var(--status-critical)' }}>
+            <div className="agent-banner-title" style={{ color: 'var(--status-critical)' }}>
+              {machineLoadError}
+            </div>
+            <div className="agent-banner-text">
+              Could not reach the machines API. Check your server or try refreshing.
+            </div>
+          </div>
+        )}
+
         {/* Agent Setup Banner — shown when no machines registered */}
-        {machines.length === 0 && !loading && (
+        {machines.length === 0 && !loading && !machineLoadError && (
           <div className="agent-banner">
             <div className="agent-banner-title">Connect your device</div>
             <div className="agent-banner-text">
