@@ -695,11 +695,11 @@ body {
   margin-bottom: 2px;
 }
 .machine-item:hover {
-  background: var(--surface-hover);
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 .machine-item.active {
-  background: var(--accent-subtle);
+  background: var(--accent-muted);
   color: var(--accent);
   font-weight: 500;
 }
@@ -708,9 +708,9 @@ body {
 
 /* ─── Agent Setup Banner ─────────────────────────────────────────────────── */
 .agent-banner {
-  background: var(--surface-secondary);
+  background: var(--bg-elevated);
   border: 1px dashed var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   padding: 20px 24px;
   margin-bottom: 28px;
 }
@@ -728,11 +728,11 @@ body {
 }
 .agent-banner-code {
   display: block;
-  background: var(--surface-tertiary, var(--surface));
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
-  font-family: var(--font-mono);
+  font-family: 'DM Mono', monospace;
   font-size: 12px;
   color: var(--accent);
   word-break: break-all;
